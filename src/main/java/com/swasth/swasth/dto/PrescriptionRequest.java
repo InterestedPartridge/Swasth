@@ -9,6 +9,7 @@ import java.time.LocalDate;
 
 @Data @NoArgsConstructor @AllArgsConstructor
 public class PrescriptionRequest {
+    private Long patientId;
     private LocalDate visitDate;
     private String doctorName;
     private String clinicName;

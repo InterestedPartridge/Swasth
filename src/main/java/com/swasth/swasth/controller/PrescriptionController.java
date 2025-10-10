@@ -33,6 +33,7 @@ public class PrescriptionController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public PrescriptionResponse uploadPrescription(
             @RequestPart("file") MultipartFile file,
+            @RequestParam("patientId") Long patientId,
             @RequestParam("clinicName") String clinicName,
             @RequestParam("doctorName") String doctorName,
             @RequestParam("visitDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate,
@@ -40,7 +41,7 @@ public class PrescriptionController {
     ) throws IOException {
 
         PrescriptionRequest dto = new PrescriptionRequest(visitDate, doctorName, clinicName);
-        return prescriptionService.uploadPrescription(file, dto, principal.getName());
+        return prescriptionService.uploadPrescription(patientId, file, dto, principal.getName());
     }
 
 

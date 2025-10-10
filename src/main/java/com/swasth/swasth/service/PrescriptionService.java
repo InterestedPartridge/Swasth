@@ -50,6 +50,7 @@ public class PrescriptionService {
     public PrescriptionResponse uploadPrescription(Long patientId, MultipartFile file, PrescriptionRequest meta, String callerEmail) throws IOException {
         Patient patient = patientRepo.findById(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+
         if (!patient.getAccountHolder().getEmail().equals(callerEmail))
             throw new AccessDeniedException("You can only upload to your own profile");
 
