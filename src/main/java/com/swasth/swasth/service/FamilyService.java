@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,72 +28,73 @@ public class FamilyService {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
-    /* on-boarder creates family + his patient row */
-    public AuthResponse createFirstMember(CreateFamilyRequest dto, String creatorEmail) {
-        User me = userRepo.findByEmail(creatorEmail)
+    @Transactional
+    public FamilyResponse createFamily(CreateFamilyRequest dto, String callerEmail) {
+        // check if user already has a family
+        User caller = userRepo.findByEmail(callerEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Family family = Family.builder()
-                .inviteCode(RandomStringUtils.randomAlphanumeric(8).toUpperCase())
-                .familyName(dto.getFamilyName())
-                .build();
-        familyRepo.save(family);
+        // fetch patient corresponding to the user
+        Patient patient = patientRepo.findByAccountHolder(caller)
+                .orElseThrow(() -> new IllegalArgumentException("Patient not found for user"));
 
-        Patient patient = Patient.builder()
-                .fullName(dto.getFirstMemberName())
-                .family(family)
-                .accountHolder(me)
-                .build();
-        patientRepo.save(patient);
-
-        return buildTokens(me);
-    }
-    /* any adult joins with invite code → own User + Patient */
-    @Transactional
-    public AuthResponse joinFamily(JoinFamilyRequest dto) {
-        Family family = familyRepo.findByInviteCode(dto.getInviteCode())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid invite code"));
-
-        if (userRepo.findByEmail(dto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
+        if (patient.getFamily() != null) {
+            throw new IllegalArgumentException("User already belongs to a family");
         }
 
-        Patient newPatient = Patient.builder()
-                .fullName(dto.getFullName())
-                .family(family)
-                .accountHolder(newUser)
+        // create family
+        Family family = Family.builder()
+                .familyName(dto.getFamilyName())
+                .inviteCode(RandomStringUtils.randomAlphanumeric(8).toUpperCase())
                 .build();
-        patientRepo.save(newPatient);
 
-        return buildTokens(newUser);
+        // save family
+        familyRepo.save(family);
+
+        // set family for patient
+        patient.setFamily(family);
+        patientRepo.save(patient);
+
+        // return response
+        return new FamilyResponse(family.getFamilyName(),
+                family.getInviteCode(),
+                List.of(toResponse(patient)));
     }
 
-    /* every member sees whole family */
-    public List<PatientResponse> listFamily(String readerEmail) {
-        User me = userRepo.findByEmail(readerEmail).orElseThrow();
-        Patient myProfile = patientRepo.findByAccountHolder(me)
-                .orElseThrow(() -> new IllegalArgumentException("No profile"));
-        return patientRepo.findByFamily(myProfile.getFamily())
-                .stream().map(this::toResponse)
-                .toList();
-    }
-
-    /* edit only own profile */
     @Transactional
-    public PatientResponse updateMyProfile(Long patientId,
-                                           UpdateProfileRequest dto,
-                                           String editorEmail) {
-        Patient p = patientRepo.findById(patientId)
-                .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+    public FamilyResponse joinFamily(String inviteCode, String callerEmail) {
+        // check if user is present
+        User caller = userRepo.findByEmail(callerEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!p.getAccountHolder().getEmail().equals(editorEmail))
-            throw new AccessDeniedException("You can only edit your own profile");
+        // fetch patient corresponding to the user
+        Patient patient = patientRepo.findByAccountHolder(caller)
+                .orElseThrow(() -> new IllegalArgumentException("Patient not found for user"));
 
-        p.setFullName(dto.getFullName());
-        p.setDateOfBirth(dto.getDateOfBirth());
-        p.setGender(dto.getGender());
-        p.setPhone(dto.getPhone());
-        return toResponse(patientRepo.save(p));
+        if (patient.getFamily() != null) {
+            throw new IllegalArgumentException("User already belongs to a family");
+        }
+
+        // fetch family by invite code
+        Family family = familyRepo.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid invite code"));
+
+        // add patient to family
+        patient.setFamily(family);
+        patientRepo.save(patient);
+
+        // return response
+        return buildFamilyResponse(family);
+    }
+
+    // Patient
+    public List<PatientResponse> listFamilyMembers(String callerEmail) {
+        Patient p = patientRepo.findByAccountHolder(userRepo.findByEmail(callerEmail)
+                        .orElseThrow(() -> new IllegalArgumentException("Caller not found")))
+                .orElseThrow(() -> new IllegalArgumentException("Patient not found for user"));
+        Family f = p.getFamily();
+        List<Patient> patients = patientRepo.findByFamily(f);
+        return patients.stream().map(this::toResponse).toList();
     }
 
     /* helpers */
@@ -104,9 +106,20 @@ public class FamilyService {
                 .build();
     }
 
+    public FamilyResponse buildFamilyResponse(Family f) {
+        List<PatientResponse> patients = f.getPatients()
+                .stream().map(this::toResponse).toList();
+        return FamilyResponse.builder()
+                .familyName(f.getFamilyName())
+                .inviteCode(f.getInviteCode())
+                .patients(patients)
+                .build();
+    }
+
     private PatientResponse toResponse(Patient p) {
         return new PatientResponse(p.getId(), p.getFullName(), p.getDateOfBirth(),
                 p.getGender(), p.getPhone(),
                 p.getFamily().getInviteCode());
     }
+
 }

@@ -1,6 +1,8 @@
 package com.swasth.swasth.controller;
 
 import com.swasth.swasth.dto.*;
+import com.swasth.swasth.entities.Family;
+import com.swasth.swasth.repositories.PatientRepository;
 import com.swasth.swasth.service.FamilyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,27 +19,26 @@ public class FamilyController {
 
     private final FamilyService familyService;
 
-    @PostMapping("/create-first")
-    public AuthResponse createFirst(@Valid @RequestBody CreateFamilyRequest dto,
-                                    Principal principal) {
-        return familyService.createFirstMember(dto, principal.getName());
+    @PostMapping("/create")
+    public FamilyResponse create(@Valid @RequestBody CreateFamilyRequest dto,
+                                 Principal principal) {
+        return familyService.createFamily(dto, principal.getName());
+    }
+    @GetMapping("/members")
+    public List<PatientResponse> list(Principal principal) {
+        return familyService.listFamilyMembers(principal.getName());
     }
 
     @PostMapping("/join")
-    @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse join(@Valid @RequestBody JoinFamilyRequest dto) {
-        return familyService.joinFamily(dto);
+    public FamilyResponse joinFamily(@RequestParam String inviteCode,
+                                     Principal principal) {
+        return familyService.joinFamily(inviteCode, principal.getName());
     }
 
-    @GetMapping("/members")
-    public List<PatientResponse> list(Principal principal) {
-        return familyService.listFamily(principal.getName());
-    }
-
-    @PutMapping("/profile/{patientId}")
-    public PatientResponse updateProfile(@PathVariable Long patientId,
-                                         @Valid @RequestBody UpdateProfileRequest dto,
-                                         Principal principal) {
-        return familyService.updateMyProfile(patientId, dto, principal.getName());
-    }
+//    @PutMapping("/profile/{patientId}")
+//    public PatientResponse updateProfile(@PathVariable Long patientId,
+//                                         @Valid @RequestBody UpdateProfileRequest dto,
+//                                         Principal principal) {
+//        return familyService.updateMyProfile(patientId, dto, principal.getName());
+//    }
 }

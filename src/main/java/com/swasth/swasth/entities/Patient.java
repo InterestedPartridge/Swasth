@@ -17,10 +17,10 @@ public class Patient {
     private String phone;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_id", nullable = false)
+    @JoinColumn(name = "family_id")
     private Family family;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_holder_id", nullable = false)
+    @JoinColumn(name = "account_holder_id", unique = true, nullable = false)
     private User accountHolder;   // login that owns this profile
 }
