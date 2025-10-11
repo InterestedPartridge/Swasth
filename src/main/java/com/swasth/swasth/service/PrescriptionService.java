@@ -54,18 +54,24 @@ public class PrescriptionService {
         if (!patient.getAccountHolder().getEmail().equals(callerEmail))
             throw new AccessDeniedException("You can only upload to your own profile");
 
-        String original = file.getOriginalFilename();
-        String stored = fileStorage.uploadFile(file, uploadDir);   // UUID + timestamp + ext
-        String fileUrl = "/patients/" + patientId + "/prescriptions/" + stored;   // UUID URL
-
         Prescription p = Prescription.builder()
-                .fileName(original)                       // human name
-                .fileUrl(fileUrl)                         // UUID URL
+                .fileName("")                       // human name
+                .fileUrl("")                         // UUID URL
                 .visitDate(meta.getVisitDate())
                 .doctorName(meta.getDoctorName())
                 .clinicName(meta.getClinicName())
                 .patient(patient)
                 .build();
+
+        prescriptionRepository.save(p);
+
+        String original = file.getOriginalFilename();
+        String stored = fileStorage.uploadFile(file, uploadDir, patient.getId(), p.getId());   // UUID + timestamp + ext
+        String fileUrl = "/patients/" + patientId + "/prescriptions/" + stored;   // UUID URL
+
+        p.setFileName(original);
+        p.setFileUrl(fileUrl);
+
         return toResponse(prescriptionRepository.save(p));
     }
 
@@ -92,15 +98,6 @@ public class PrescriptionService {
 
         if (!p.getPatient().getId().equals(patient.getId()))
             throw new IllegalArgumentException("Prescription does not belong to patient");
-
-//        Path path = Paths.get(uploadRoot, p.getFileUrl().substring(p.getFileUrl().lastIndexOf('/') + 1));
-//        Resource resource = new UrlResource(path.toUri());
-//        if (!resource.exists()) throw new IllegalArgumentException("File not found");
-//
-//        return ResponseEntity.ok()
-//                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-//                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + p.getFileName() + "\"")
-//                .body(resource);
 
         Resource resource = fileStorage.loadFileAsResource(
                 p.getFileUrl().substring(p.getFileUrl().lastIndexOf('/') + 1),

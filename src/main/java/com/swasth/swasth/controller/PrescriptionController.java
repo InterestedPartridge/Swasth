@@ -39,20 +39,9 @@ public class PrescriptionController {
             @RequestParam("visitDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate,
             Principal principal
     ) throws IOException {
-
-        PrescriptionRequest dto = new PrescriptionRequest(visitDate, doctorName, clinicName);
+        PrescriptionRequest dto = new PrescriptionRequest(patientId, visitDate, doctorName, clinicName);
         return prescriptionService.uploadPrescription(patientId, file, dto, principal.getName());
     }
-
-
-
-
-    /* 2. add meta – pure JSON */
-//    @PostMapping("/meta")
-//    public void addMeta(@Valid @RequestBody PrescriptionRequest dto,
-//                        Principal principal) {
-//        prescriptionService.addMeta(dto, principal.getName());
-//    }
 
     @GetMapping("/getAll")
     public List<PrescriptionResponse> getAll(Principal principal) {

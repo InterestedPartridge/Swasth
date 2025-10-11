@@ -20,10 +20,10 @@ public class LocalFileStorageService implements FileStorageService {
     private String baseUploadDir;
 
     @Override
-    public String uploadFile(MultipartFile file, String directory) throws IOException {
+    public String uploadFile(MultipartFile file, String directory, Long patientId, Long prescriptionId) throws IOException {
         String original = file.getOriginalFilename();
         String ext = (original != null && original.contains(".")) ? original.substring(original.lastIndexOf('.')) : "";
-        String stored = UUID.randomUUID() + "_" + System.currentTimeMillis() + ext;
+        String stored = patientId + "_" + prescriptionId + ext;
         Path targetDir = Path.of(baseUploadDir, directory);
         Files.createDirectories(targetDir);
         Path targetFile = targetDir.resolve(stored);
