@@ -11,7 +11,7 @@ import com.swasth.swasth.service.UserService;
 import com.swasth.swasth.dto.AuthRequest;
 import com.swasth.swasth.dto.AuthResponse;
 
-@RequestMapping("/users")
+@RequestMapping("/api/v1/users")
 @RestController
 @RequiredArgsConstructor
 public class UserController {

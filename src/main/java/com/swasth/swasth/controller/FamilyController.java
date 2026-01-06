@@ -13,7 +13,7 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/family")
+@RequestMapping("/api/v1/family")
 @RequiredArgsConstructor
 public class FamilyController {
 

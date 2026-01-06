@@ -25,10 +25,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .headers(h -> h.frameOptions(fo -> fo.disable()))
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/auth/**", "/family/join", "/h2-console/**",
-                                "/users/**", "/swagger-ui.html/**", "/swagger-ui/**",
+                        .requestMatchers("/auth/**", "api/v1/family/join", "/h2-console/**",
+                                "api/v1/users/**", "/swagger-ui.html/**", "/swagger-ui/**",
                                 "/v3/api-docs/**", "/api-docs").permitAll()
-                        .requestMatchers("/family/**").hasRole("USER")
+                        .requestMatchers("/api/v1/family/**").hasRole("USER")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

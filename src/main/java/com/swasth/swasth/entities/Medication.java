@@ -7,8 +7,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "medications")
@@ -30,6 +28,7 @@ public class Medication {
     @Column(nullable = false)
     private String medicineName;
 
+    // dosage instructions - e.g., "1 tablet every 8 hours"
     @Column(nullable = false)
     private String dosage;
 
